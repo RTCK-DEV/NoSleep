@@ -1,0 +1,38 @@
+/* Status lines */
+"status.caffeinate.running" = "caffeinate -dimsu: running";
+"status.caffeinate.stopped" = "caffeinate -dimsu: stopped";
+"status.disablesleep" = "pmset disablesleep: %@";
+"status.disablesleep.unknown" = "unknown";
+"status.vram.default" = "VRAM limit: default";
+"status.vram.value" = "VRAM limit: %d MB (%d%%)";
+"status.vram.unknown" = "VRAM limit: unknown";
+
+/* Menu items */
+"menu.toggle.enable" = "Enable Sleep Prevention";
+"menu.toggle.disable" = "Disable Sleep Prevention";
+"menu.vram" = "Change VRAM Allocation…";
+"menu.setup" = "Set Up Administrator Access…";
+"menu.quit" = "Quit NoSleep";
+
+/* Alerts */
+"alert.title" = "NoSleep";
+"alert.pmset.enable.fail" = "Could not run sudo pmset -a disablesleep 1.\n\nInstall the NOPASSWD rule via \"Set Up Administrator Access…\" in the menu. Sleep prevention via caffeinate is still active.";
+"alert.pmset.disable.fail" = "Could not run sudo pmset -a disablesleep 0.\nPlease run it manually in Terminal.";
+"alert.caffeinate.fail" = "Failed to start caffeinate: %@";
+
+/* VRAM dialog */
+"vram.title" = "VRAM Allocation (iogpu.wired_limit_mb)";
+"vram.info" = "Choose the GPU limit as a percentage of the %d MB of physical memory.\nCurrent: %@ (resets automatically on restart)";
+"vram.default" = "default";
+"vram.unknown" = "unknown";
+"vram.slider.label" = "%d%% = %d MB";
+"vram.button.set" = "Set";
+"vram.button.restore" = "Restore Default";
+"vram.button.cancel" = "Cancel";
+"vram.sysctl.fail" = "Could not run sudo sysctl iogpu.wired_limit_mb=%d.\n\nInstall (or reinstall) the NOPASSWD rule via \"Set Up Administrator Access…\".";
+
+/* Sudoers setup */
+"setup.script.fail" = "Could not create the setup script.";
+"setup.fail" = "Setup failed: %@";
+"setup.done" = "Setup complete.\nCreated /etc/sudoers.d/nosleep-pmset.";
+"setup.error.unknown" = "unknown error";

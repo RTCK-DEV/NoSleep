@@ -1,5 +1,13 @@
 import Cocoa
 
+private func L(_ key: String) -> String {
+    NSLocalizedString(key, comment: "")
+}
+
+private func Lf(_ key: String, _ args: CVarArg...) -> String {
+    String(format: NSLocalizedString(key, comment: ""), arguments: args)
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private var caffeinate: Process?
@@ -41,19 +49,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         toggleItem.target = self
         menu.addItem(toggleItem)
 
-        vramItem = NSMenuItem(title: "VRAM 割り当てを変更…", action: #selector(changeVram), keyEquivalent: "")
+        vramItem = NSMenuItem(title: L("menu.vram"), action: #selector(changeVram), keyEquivalent: "")
         vramItem.target = self
         vramItem.image = NSImage(systemSymbolName: "memorychip", accessibilityDescription: nil)
         menu.addItem(vramItem)
         menu.addItem(.separator())
 
-        let setupItem = NSMenuItem(title: "管理者権限をセットアップ…", action: #selector(installSudoers), keyEquivalent: "")
+        let setupItem = NSMenuItem(title: L("menu.setup"), action: #selector(installSudoers), keyEquivalent: "")
         setupItem.target = self
         setupItem.image = NSImage(systemSymbolName: "key", accessibilityDescription: nil)
         menu.addItem(setupItem)
         menu.addItem(.separator())
 
-        let quit = NSMenuItem(title: "NoSleep を終了", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: L("menu.quit"), action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         quit.image = NSImage(systemSymbolName: "power", accessibilityDescription: nil)
         menu.addItem(quit)
@@ -67,18 +75,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateStatus() {
-        caffeinateLine.title = "caffeinate -dimsu: \(active ? "実行中" : "停止")"
+        caffeinateLine.title = active ? L("status.caffeinate.running") : L("status.caffeinate.stopped")
         switch currentDisablesleep() {
-        case .some(true):  pmsetLine.title = "pmset disablesleep: 1"
-        case .some(false): pmsetLine.title = "pmset disablesleep: 0"
-        case .none:        pmsetLine.title = "pmset disablesleep: 不明"
+        case .some(let disabled):
+            pmsetLine.title = Lf("status.disablesleep", disabled ? "1" : "0")
+        case .none:
+            pmsetLine.title = Lf("status.disablesleep", L("status.disablesleep.unknown"))
         }
         switch currentVramLimit() {
-        case .some(0):       vramLine.title = "VRAM 上限: デフォルト"
-        case .some(let mb):  vramLine.title = "VRAM 上限: \(mb) MB (\(mb * 100 / totalMemoryMB)%)"
-        case .none:          vramLine.title = "VRAM 上限: 不明"
+        case .some(0):       vramLine.title = L("status.vram.default")
+        case .some(let mb):  vramLine.title = Lf("status.vram.value", mb, mb * 100 / totalMemoryMB)
+        case .none:          vramLine.title = L("status.vram.unknown")
         }
-        toggleItem.title = active ? "スリープ防止を無効化" : "スリープ防止を有効化"
+        toggleItem.title = active ? L("menu.toggle.disable") : L("menu.toggle.enable")
         toggleItem.state = active ? .on : .off
 
         let name = active ? "cup.and.saucer.fill" : "cup.and.saucer"
@@ -103,7 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if runPmset("1") {
             pmsetApplied = true
         } else {
-            alert("sudo pmset -a disablesleep 1 を実行できませんでした。\n\nメニューの「管理者権限をセットアップ…」で NOPASSWD 設定をインストールしてください。caffeinate によるスリープ防止は有効です。")
+            alert(L("alert.pmset.enable.fail"))
         }
         active = caffeinate != nil
         updateStatus()
@@ -117,7 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if runPmset("0") {
                 pmsetApplied = false
             } else {
-                alert("sudo pmset -a disablesleep 0 を実行できませんでした。\nターミナルで手動で実行してください。")
+                alert(L("alert.pmset.disable.fail"))
             }
         }
         active = false
@@ -142,7 +151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             try p.run()
             caffeinate = p
         } catch {
-            alert("caffeinate の起動に失敗しました: \(error.localizedDescription)")
+            alert(Lf("alert.caffeinate.fail", error.localizedDescription))
         }
     }
 
@@ -204,7 +213,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func changeVram() {
         let totalMB = totalMemoryMB
         let current = currentVramLimit()
-        let currentText = current.map { $0 == 0 ? "デフォルト" : "\($0) MB (\($0 * 100 / totalMB)%)" } ?? "不明"
+        let currentText = current.map {
+            $0 == 0 ? L("vram.default") : "\($0) MB (\($0 * 100 / totalMB)%)"
+        } ?? L("vram.unknown")
 
         let accessory = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 66))
 
@@ -234,12 +245,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         accessory.addSubview(slider)
 
         let a = NSAlert()
-        a.messageText = "VRAM 割り当て (iogpu.wired_limit_mb)"
-        a.informativeText = "物理メモリ \(totalMB) MB に対する GPU 上限の割合を選んでください。\n現在値: \(currentText)　（再起動で自動リセット）"
+        a.messageText = L("vram.title")
+        a.informativeText = Lf("vram.info", totalMB, currentText)
         a.accessoryView = accessory
-        a.addButton(withTitle: "設定")
-        a.addButton(withTitle: "デフォルトに戻す")
-        a.addButton(withTitle: "キャンセル")
+        a.addButton(withTitle: L("vram.button.set"))
+        a.addButton(withTitle: L("vram.button.restore"))
+        a.addButton(withTitle: L("vram.button.cancel"))
         activateApp()
         a.window.level = .modalPanel
         let response = a.runModal()
@@ -257,13 +268,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if runSysctl(mb) {
             updateStatus()
         } else {
-            alert("sudo sysctl iogpu.wired_limit_mb=\(mb) を実行できませんでした。\n\nメニューの「管理者権限をセットアップ…」で NOPASSWD 設定をインストール（または再インストール）してください。")
+            alert(Lf("vram.sysctl.fail", mb))
         }
     }
 
     @objc private func vramSliderChanged(_ sender: NSSlider) {
         let pct = sender.integerValue
-        vramSliderLabel?.stringValue = "\(pct)% ≒ \(pct * totalMemoryMB / 100) MB"
+        vramSliderLabel?.stringValue = Lf("vram.slider.label", pct, pct * totalMemoryMB / 100)
     }
 
     private func runSysctl(_ mb: Int) -> Bool {
@@ -303,7 +314,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         do {
             try script.write(to: url, atomically: true, encoding: .utf8)
         } catch {
-            alert("セットアップスクリプトを作成できませんでした。")
+            alert(L("setup.script.fail"))
             return
         }
 
@@ -312,12 +323,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSAppleScript(source: source)?.executeAndReturnError(&err)
         if let err {
             if (err[NSAppleScript.errorNumber] as? Int) != -128 {
-                let msg = err[NSAppleScript.errorMessage] as? String ?? "不明なエラー"
-                alert("セットアップに失敗しました: \(msg)")
+                let msg = err[NSAppleScript.errorMessage] as? String ?? L("setup.error.unknown")
+                alert(Lf("setup.fail", msg))
             }
             return
         }
-        alert("セットアップが完了しました。\n/etc/sudoers.d/nosleep-pmset を作成しました。")
+        alert(L("setup.done"))
     }
 
     // MARK: - Misc
@@ -337,7 +348,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func alert(_ message: String) {
         activateApp()
         let a = NSAlert()
-        a.messageText = "NoSleep"
+        a.messageText = L("alert.title")
         a.informativeText = message
         a.alertStyle = .informational
         a.window.level = .modalPanel

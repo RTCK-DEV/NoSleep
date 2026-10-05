@@ -8,6 +8,13 @@
 	<string>com.rtck.NoSleep</string>
 	<key>CFBundleName</key>
 	<string>NoSleep</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ja</string>
+	</array>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

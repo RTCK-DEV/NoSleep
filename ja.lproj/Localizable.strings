@@ -1,0 +1,38 @@
+/* Status lines */
+"status.caffeinate.running" = "caffeinate -dimsu: 実行中";
+"status.caffeinate.stopped" = "caffeinate -dimsu: 停止";
+"status.disablesleep" = "pmset disablesleep: %@";
+"status.disablesleep.unknown" = "不明";
+"status.vram.default" = "VRAM 上限: デフォルト";
+"status.vram.value" = "VRAM 上限: %d MB (%d%%)";
+"status.vram.unknown" = "VRAM 上限: 不明";
+
+/* Menu items */
+"menu.toggle.enable" = "スリープ防止を有効化";
+"menu.toggle.disable" = "スリープ防止を無効化";
+"menu.vram" = "VRAM 割り当てを変更…";
+"menu.setup" = "管理者権限をセットアップ…";
+"menu.quit" = "NoSleep を終了";
+
+/* Alerts */
+"alert.title" = "NoSleep";
+"alert.pmset.enable.fail" = "sudo pmset -a disablesleep 1 を実行できませんでした。\n\nメニューの「管理者権限をセットアップ…」で NOPASSWD 設定をインストールしてください。caffeinate によるスリープ防止は有効です。";
+"alert.pmset.disable.fail" = "sudo pmset -a disablesleep 0 を実行できませんでした。\nターミナルで手動で実行してください。";
+"alert.caffeinate.fail" = "caffeinate の起動に失敗しました: %@";
+
+/* VRAM dialog */
+"vram.title" = "VRAM 割り当て (iogpu.wired_limit_mb)";
+"vram.info" = "物理メモリ %d MB に対する GPU 上限の割合を選んでください。\n現在値: %@　（再起動で自動リセット）";
+"vram.default" = "デフォルト";
+"vram.unknown" = "不明";
+"vram.slider.label" = "%d%% ≒ %d MB";
+"vram.button.set" = "設定";
+"vram.button.restore" = "デフォルトに戻す";
+"vram.button.cancel" = "キャンセル";
+"vram.sysctl.fail" = "sudo sysctl iogpu.wired_limit_mb=%d を実行できませんでした。\n\nメニューの「管理者権限をセットアップ…」で NOPASSWD 設定をインストール（または再インストール）してください。";
+
+/* Sudoers setup */
+"setup.script.fail" = "セットアップスクリプトを作成できませんでした。";
+"setup.fail" = "セットアップに失敗しました: %@";
+"setup.done" = "セットアップが完了しました。\n/etc/sudoers.d/nosleep-pmset を作成しました。";
+"setup.error.unknown" = "不明なエラー";

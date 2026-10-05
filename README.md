@@ -1,41 +1,60 @@
 # NoSleep
 
-メニューバーから `caffeinate -dimsu` と `sudo pmset -a disablesleep 1` をワンクリックで切り替えるアプリ。
+[日本語版はこちら](README.ja.md)
 
-## ビルド
+A macOS menu bar app that toggles `caffeinate -dimsu` + `sudo pmset -a disablesleep 1`, and adjusts the Apple Silicon GPU memory limit (`iogpu.wired_limit_mb`) with a percentage slider.
+
+![macOS](https://img.shields.io/badge/macOS-14%2B-black) ![License](https://img.shields.io/badge/license-MIT-green)
+
+## Install
+
+Download `NoSleep.zip` from [Releases](../../releases), unzip, and move `NoSleep.app` anywhere you like.
+
+Since the app is ad-hoc signed, remove the quarantine flag after downloading:
 
 ```sh
-./build.sh        # NoSleep.app を生成
-open NoSleep.app  # 起動（メニューバーにコーヒーカップのアイコンが出る）
+xattr -d com.apple.quarantine NoSleep.app
+open NoSleep.app
 ```
 
-## 使い方
+Or build from source:
 
-- メニューバーのアイコン → 「スリープ防止を有効化」
-  - `caffeinate -dimsu` を起動
-  - `sudo -n pmset -a disablesleep 1` を実行
-- 「スリープ防止を無効化」またはアプリ終了で `caffeinate` を止め、`pmset -a disablesleep 0` に戻す
-- 「VRAM 割り当てを変更…」→ 物理メモリに対する割合（5〜95%）をスライダーで選び、`sudo sysctl iogpu.wired_limit_mb=<MB>` に換算して実行
-  - Apple Silicon の GPU メモリ上限を変更（LLM などで GPU メモリを増やしたいとき用）
-  - 「デフォルトに戻す」で `0`（自動）に復帰。再起動で自動リセット
+```sh
+./build.sh        # produces NoSleep.app
+open NoSleep.app  # a coffee cup icon appears in the menu bar
+```
 
-## sudoers 設定（pmset のパスワードレス化）
+## Usage
 
-メニューの「管理者権限をセットアップ…」を押すか、手動で:
+- **Enable Sleep Prevention** — starts `caffeinate -dimsu` and runs `sudo -n pmset -a disablesleep 1`
+- **Disable Sleep Prevention** / quitting the app — kills `caffeinate` and restores `pmset -a disablesleep 0`
+- **Change VRAM Allocation…** — pick a percentage (5–95%) of physical memory; runs `sudo sysctl iogpu.wired_limit_mb=<MB>`
+  - Useful for increasing GPU memory for local LLMs on Apple Silicon
+  - "Restore Default" sets it back to `0`. Resets automatically on restart
+
+## sudoers setup (passwordless pmset / sysctl)
+
+Choose **"Set Up Administrator Access…"** in the menu, or run:
 
 ```sh
 sudo ./install-sudoers.sh
 ```
 
-`/etc/sudoers.d/nosleep-pmset` に以下の NOPASSWD 権限だけを追加する。
+This adds NOPASSWD entries to `/etc/sudoers.d/nosleep-pmset` for only:
 
 - `/usr/bin/pmset -a disablesleep 0` / `1`
 - `/usr/sbin/sysctl iogpu.wired_limit_mb=*`
-設定がなくても `caffeinate` だけは動く（`pmset` 部分だけ失敗して警告が出る）。
 
-## 削除
+Without it, `caffeinate` still works (only the `pmset`/`sysctl` parts will warn).
+
+## Localization
+
+English and Japanese are supported. The app follows the system language.
+
+## Uninstall
 
 ```sh
 sudo rm /etc/sudoers.d/nosleep-pmset
-sudo pmset -a disablesleep 0   # もし 1 のままなら
+sudo pmset -a disablesleep 0   # if still set to 1
+rm -rf NoSleep.app
 ```
