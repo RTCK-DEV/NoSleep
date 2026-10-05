@@ -4,7 +4,7 @@
 
 A macOS menu bar app that toggles `caffeinate -dimsu` + `sudo pmset -a disablesleep 1`, and adjusts the Apple Silicon GPU memory limit (`iogpu.wired_limit_mb`) with a percentage slider.
 
-![macOS](https://img.shields.io/badge/macOS-14%2B-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![macOS](https://img.shields.io/badge/macOS-27%2B-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Install
 

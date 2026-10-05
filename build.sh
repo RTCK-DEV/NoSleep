@@ -3,7 +3,7 @@ set -e
 cd "$(dirname "$0")"
 
 APP="NoSleep.app"
-swiftc -O -framework Cocoa -o NoSleep main.swift
+swiftc -O -target arm64-apple-macosx27.0 -framework Cocoa -o NoSleep main.swift
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 mv NoSleep "$APP/Contents/MacOS/NoSleep"
 cp Info.plist "$APP/Contents/Info.plist"

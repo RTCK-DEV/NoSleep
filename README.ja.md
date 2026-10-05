@@ -4,7 +4,7 @@
 
 `caffeinate -dimsu` + `sudo pmset -a disablesleep 1` をメニューバーからワンクリックで切り替え、さらに Apple Silicon の GPU メモリ上限（`iogpu.wired_limit_mb`）をパーセントスライダーで変更できる macOS アプリ。
 
-![macOS](https://img.shields.io/badge/macOS-14%2B-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![macOS](https://img.shields.io/badge/macOS-27%2B-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## インストール
 
