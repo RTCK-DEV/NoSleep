@@ -1,4 +1,5 @@
 import Cocoa
+import ServiceManagement
 
 private func L(_ key: String) -> String {
     NSLocalizedString(key, comment: "")
@@ -15,17 +16,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var pmsetApplied = false
     private var active = false
     private var vramSliderLabel: NSTextField?
+    private let defaults = UserDefaults.standard
 
     private let caffeinateLine = NSMenuItem()
     private let pmsetLine = NSMenuItem()
     private let vramLine = NSMenuItem()
     private var toggleItem: NSMenuItem!
     private var vramItem: NSMenuItem!
+    private var launchItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         buildMenu()
         trapSignals()
+        DispatchQueue.main.async { self.restoreState() }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -59,6 +63,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         setupItem.target = self
         setupItem.image = NSImage(systemSymbolName: "key", accessibilityDescription: nil)
         menu.addItem(setupItem)
+
+        launchItem = NSMenuItem(title: L("menu.launchAtLogin"), action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        launchItem.target = self
+        launchItem.image = NSImage(systemSymbolName: "arrow.up.forward.app", accessibilityDescription: nil)
+        menu.addItem(launchItem)
         menu.addItem(.separator())
 
         let quit = NSMenuItem(title: L("menu.quit"), action: #selector(quit), keyEquivalent: "q")
@@ -89,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         toggleItem.title = active ? L("menu.toggle.disable") : L("menu.toggle.enable")
         toggleItem.state = active ? .on : .off
+        launchItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
 
         let name = active ? "cup.and.saucer.fill" : "cup.and.saucer"
         let img = NSImage(systemSymbolName: name, accessibilityDescription: "NoSleep")
@@ -115,6 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             alert(L("alert.pmset.enable.fail"))
         }
         active = caffeinate != nil
+        defaults.set(active, forKey: "wasActive")
         updateStatus()
     }
 
@@ -130,6 +141,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
         active = false
+        defaults.set(false, forKey: "wasActive")
+        updateStatus()
+    }
+
+    // MARK: - Startup / login item
+
+    private func restoreState() {
+        let vram = defaults.integer(forKey: "vramMB")
+        if vram > 0 { _ = runSysctl(vram) }
+        if defaults.bool(forKey: "wasActive") {
+            activate()
+        }
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        do {
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+            } else {
+                try SMAppService.mainApp.register()
+                if SMAppService.mainApp.status == .requiresApproval {
+                    SMAppService.openSystemSettingsLoginItems()
+                    alert(L("loginitem.approval"))
+                }
+            }
+        } catch {
+            alert(Lf("loginitem.fail", error.localizedDescription))
+        }
         updateStatus()
     }
 
@@ -266,6 +305,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         if runSysctl(mb) {
+            defaults.set(mb, forKey: "vramMB")
             updateStatus()
         } else {
             alert(Lf("vram.sysctl.fail", mb))

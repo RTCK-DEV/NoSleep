@@ -31,6 +31,8 @@ open NoSleep.app  # a coffee cup icon appears in the menu bar
 - **Change VRAM Allocation…** — pick a percentage (5–95%) of physical memory; runs `sudo sysctl iogpu.wired_limit_mb=<MB>`
   - Useful for increasing GPU memory for local LLMs on Apple Silicon
   - "Restore Default" sets it back to `0`. Resets automatically on restart
+- **Launch at Login** — registers the app as a login item (SMAppService)
+- **State restore on launch** — if sleep prevention was active when the app quit, it is re-enabled on next launch. The last VRAM value is also re-applied (the sysctl resets on reboot)
 
 ## sudoers setup (passwordless pmset / sysctl)
 

@@ -12,6 +12,7 @@
 "menu.toggle.disable" = "スリープ防止を無効化";
 "menu.vram" = "VRAM 割り当てを変更…";
 "menu.setup" = "管理者権限をセットアップ…";
+"menu.launchAtLogin" = "ログイン時に起動";
 "menu.quit" = "NoSleep を終了";
 
 /* Alerts */
@@ -36,3 +37,7 @@
 "setup.fail" = "セットアップに失敗しました: %@";
 "setup.done" = "セットアップが完了しました。\n/etc/sudoers.d/nosleep-pmset を作成しました。";
 "setup.error.unknown" = "不明なエラー";
+
+/* Login item */
+"loginitem.approval" = "承認が必要です。\nシステム設定 > 一般 > ログイン項目 で NoSleep を許可してください。";
+"loginitem.fail" = "ログイン項目の設定を変更できませんでした: %@";

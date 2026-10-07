@@ -12,6 +12,7 @@
 "menu.toggle.disable" = "Disable Sleep Prevention";
 "menu.vram" = "Change VRAM Allocation…";
 "menu.setup" = "Set Up Administrator Access…";
+"menu.launchAtLogin" = "Launch at Login";
 "menu.quit" = "Quit NoSleep";
 
 /* Alerts */
@@ -36,3 +37,7 @@
 "setup.fail" = "Setup failed: %@";
 "setup.done" = "Setup complete.\nCreated /etc/sudoers.d/nosleep-pmset.";
 "setup.error.unknown" = "unknown error";
+
+/* Login item */
+"loginitem.approval" = "Approval is required.\nOpen System Settings > General > Login Items and allow NoSleep.";
+"loginitem.fail" = "Could not change the login item setting: %@";
