@@ -13,3 +13,10 @@ for lang in en ja; do
 done
 codesign --force --sign - "$APP" 2>/dev/null || true
 echo "Built $APP"
+
+if [ "${1:-}" = "--install" ]; then
+    dest="${2:-/Applications/my_dev}"
+    rm -rf "$dest/$APP"
+    cp -R "$APP" "$dest/$APP"
+    echo "Installed to $dest/$APP"
+fi
