@@ -1,5 +1,8 @@
 import Cocoa
 import ServiceManagement
+import os
+
+private let log = Logger(subsystem: "local.nosleep", category: "state")
 
 private func L(_ key: String) -> String {
     NSLocalizedString(key, comment: "")
@@ -13,7 +16,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     private var caffeinate: Process?
     private var signalSources: [DispatchSourceSignal] = []
-    private var pmsetApplied = false
+    // pmset を自分で 1 にしたか。クラッシュ後の解除漏れを防ぐため永続化する。
+    private var pmsetApplied = UserDefaults.standard.bool(forKey: "pmsetApplied") {
+        didSet { UserDefaults.standard.set(pmsetApplied, forKey: "pmsetApplied") }
+    }
+    private var reconcileTimer: Timer?
     private var active = false
     private var vramSliderLabel: NSTextField?
     private let defaults = UserDefaults.standard
@@ -29,12 +36,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         buildMenu()
         trapSignals()
-        DispatchQueue.main.async { self.restoreState() }
+        DispatchQueue.main.async {
+            self.cleanUpStaleState()
+            self.restoreState()
+        }
+        reconcileTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            self?.reconcile()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         caffeinate?.terminate()
-        if pmsetApplied { _ = runPmset("0") }
+        releasePmset()
     }
 
     // MARK: - Menu
@@ -87,7 +100,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         caffeinateLine.title = active ? L("status.caffeinate.running") : L("status.caffeinate.stopped")
         switch currentDisablesleep() {
         case .some(let disabled):
-            pmsetLine.title = Lf("status.disablesleep", disabled ? "1" : "0")
+            let warn = active && !disabled ? " ⚠" : ""
+            pmsetLine.title = Lf("status.disablesleep", disabled ? "1" : "0") + warn
         case .none:
             pmsetLine.title = Lf("status.disablesleep", L("status.disablesleep.unknown"))
         }
@@ -97,7 +111,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case .none:          vramLine.title = L("status.vram.unknown")
         }
         toggleItem.title = active ? L("menu.toggle.disable") : L("menu.toggle.enable")
-        toggleItem.state = active ? .on : .off
+        // 文言が「次の操作」を示すのでチェックは付けない。状態は上の2行で見る。
+        toggleItem.state = .off
         launchItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
 
         let name = active ? "cup.and.saucer.fill" : "cup.and.saucer"
@@ -121,7 +136,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         startCaffeinate()
         if runPmset("1") {
             pmsetApplied = true
+            log.info("activate: pmset 1 ok")
         } else {
+            log.error("activate: pmset 1 failed")
             alert(L("alert.pmset.enable.fail"))
         }
         active = caffeinate != nil
@@ -133,15 +150,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         caffeinate?.terminationHandler = nil
         caffeinate?.terminate()
         caffeinate = nil
-        if pmsetApplied {
-            if runPmset("0") {
-                pmsetApplied = false
-            } else {
-                alert(L("alert.pmset.disable.fail"))
-            }
+        if !releasePmset() {
+            alert(L("alert.pmset.disable.fail"))
         }
         active = false
         defaults.set(false, forKey: "wasActive")
+        updateStatus()
+    }
+
+    /// 自分が立てた、または実際に 1 のままなら 0 に戻す。成功(または不要)で true。
+    @discardableResult
+    private func releasePmset() -> Bool {
+        guard pmsetApplied || currentDisablesleep() == true else { return true }
+        let ok = runPmset("0")
+        log.info("release: pmset 0 \(ok ? "ok" : "failed", privacy: .public)")
+        if ok { pmsetApplied = false }
+        return ok
+    }
+
+    /// 前回クラッシュ等で SleepDisabled=1 が残り、今回は有効にしない場合に戻す。
+    private func cleanUpStaleState() {
+        guard pmsetApplied, !defaults.bool(forKey: "wasActive") else { return }
+        log.notice("stale SleepDisabled from previous run; releasing")
+        releasePmset()
+    }
+
+    /// 有効中に SleepDisabled が 1 でなくなっていたら再適用する(OS更新・外部変更への自己修復)。
+    private func reconcile() {
+        guard active, let disabled = currentDisablesleep(), !disabled else { return }
+        log.error("reconcile: active but SleepDisabled=0; reapplying")
+        if runPmset("1") { pmsetApplied = true } else { log.error("reconcile: reapply failed") }
         updateStatus()
     }
 
